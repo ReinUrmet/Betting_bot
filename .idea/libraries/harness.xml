@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="harness">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/harness.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

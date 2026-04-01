@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="gpt">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/silly-gpt/gpt.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
