@@ -1,16 +1,20 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.*;
 
 public class Main {
 
     //Constants
-    static final String CATEGORY = "Music";
-    static final boolean TEST_MODE = true;
+    static final String CATEGORY = "DIY";
+    static final boolean TEST_MODE = false;
+    static long budget;
 
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, IOException {
 
         //Main logic
         if (TEST_MODE) {
@@ -22,13 +26,17 @@ public class Main {
             System.out.println("Missing budget argument");
             return;
         }
-        long budget = Long.parseLong(args[0]);
+        budget = Long.parseLong(args[0]);
 
-        Scanner scanner = new Scanner(System.in);
-        System.out.println(CATEGORY);
-        System.out.flush();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(System.out));
 
-        while(scanner.hasNextLine()){
+        out.write(CATEGORY + "\n");
+        out.flush();
+
+        String line;
+        while((line = reader.readLine()) != null){
+            line = line.trim();
             //Nüüd pean vaatama mis line on
             //Näide round trippist:
             // → ASMR
@@ -37,27 +45,28 @@ public class Main {
             //→ 5 51
             //← W 12
 
-            String line = scanner.nextLine().trim();
-
-            if (line.startsWith("video.")){
+            if (line.contains("video.category")){
                 List<Integer> answers = makingBets(line);
                 int minValue = answers.get(0);
                 int maxvalue = answers.get(1);
 
-                System.out.println(minValue + " " + maxvalue);
-                System.out.flush();
-
+                out.write(minValue + " " + maxvalue + "\n");
+                out.flush();
 
             } else if (line.startsWith("W")) {
+            try {
                 long cost = Long.parseLong(line.split(" ")[1]);
                 budget -= cost;
+            } catch (Exception e) {
+                System.err.println("Error parsing W line: " + line);
+            }
             } else if (line.startsWith("L")) {
                 //Lost :(
             } else if (line.startsWith("S")) {
                 //Summary
-
-
-            }
+            } else {
+            System.err.println("Unknown line: " + line);
+        }
 
         }
 
@@ -87,9 +96,18 @@ public class Main {
 
         List<Integer> answers = new ArrayList<>();
         double score = scoreGenerator(line);
-
-
-
+        //Have to tune this more later
+        int maxBid = (int) Math.min(score * 38, budget);
+        int startBid = (int) Math.min(Math.max(1, maxBid / 2), budget);
+        //Ei betti mõtetutele kohtadele
+        if (score < 0.2) {
+            answers.add(0);
+            answers.add(0);
+            return answers;
+        }  else {
+            answers.add(startBid);
+            answers.add(maxBid);
+        }
         return answers;
     }
 
@@ -109,36 +127,48 @@ public class Main {
             }
         }
 
-        System.out.println(map);
-
         //Nüüd tuleb scorimis loogika
 
-        //User interests / video category part:
-        String interests = map.get("viewer.interests");
-        if (interests.contains(";")){
-            for (String interest: interests.split(";")){
-
+        //User interests
+        String interests = map.getOrDefault("viewer.interests", "");
+        String[] interestList = interests.isEmpty() ? new String[0] : interests.split(";");
+        for (int i = 0; i < interestList.length; i++) {
+            if (interestList[i].trim().equals(CATEGORY)) {
+                if (i == 0) score += 1.0;
+                else if (i == 1) score += 0.5;
+                else score += 0.2;
             }
-        } else {
-
         }
-        System.out.println(interests);
+
+        //Video category
+        String videoCategory = map.get("video.category");
+        if (CATEGORY.equals(videoCategory)) score += 1.0;
 
         //User gender:
+        //Ei tea hetkel kas mõjutab midagi
+        if ("M".equals(map.get("viewer.gender"))) score += 0.2;
 
-        //Comment count:
-
-        //view count:
+        //Comment count + view count = user engagement
+        long views = Long.parseLong(map.getOrDefault("video.viewCount", "0"));
+        long comments = Long.parseLong(map.getOrDefault("video.commentCount", "0"));
+        double engagement = views > 0 ? (double) comments / views : 0.0;
+        score += Math.min(engagement * 10, 1.0);
 
         //User subscribed (Y/N)
+        if ("Y".equals(map.get("viewer.subscribed"))) score += 0.5;
 
         //user age
-
+        String age = map.getOrDefault("viewer.age", "");
+        if (age.equals("25-34") || age.equals("35-44")) {
+            score += 0.5;
+        } else if (age.equals("45-54") || age.equals("55+")) {
+            score += 0.4;
+        } else if (age.equals("18-24")) {
+            score += 0.1;
+        } else { // 13-17
+            score -= 0.3;
+        }
 
         return score;
     }
-
-
-
 }
-
