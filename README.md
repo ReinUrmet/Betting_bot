@@ -2,6 +2,9 @@
 
 A Java bidding bot for the Playtech Summer 2026 internship assignment. Competes in real-time ad auctions against other bots, bidding on video advertising impressions to maximize value per ebuck spent.
 
+## Java version
+- Using java version 21
+
 ## Requirements
 
 - Java 8 or higher
